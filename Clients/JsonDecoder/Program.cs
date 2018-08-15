@@ -85,18 +85,10 @@ namespace CommandLineDecoder
                 thread.Start();
             }
 
-            int successful = 0;
             foreach (var thread in threads.Keys)
             {
                 thread.Join();
-                successful += threads[thread].getSuccessful();
-            }
-
-            int total = inputs.getInputCount();
-            if (total > 1)
-            {
-                Console.Out.WriteLine("\nDecoded " + successful + " files out of " + total +
-                    " successfully (" + (successful * 100 / total) + "%)\n");
+                threads[thread].getSuccessful();
             }
         }
 

@@ -20,7 +20,6 @@ using System.Drawing;
 using System.IO;
 
 using ZXing;
-using ZXing.Client.Result;
 
 namespace CommandLineDecoder
 {
@@ -112,34 +111,28 @@ namespace CommandLineDecoder
                     source = new BitmapLuminanceSource(image).crop(crop[0], crop[1], crop[2], crop[3]);
                 }
 
-                var reader = new BarcodeReader { AutoRotate = config.AutoRotate };
+                var reader = new BarcodeReader { AutoRotate = config.AutoRotate,TryInverted = true };
                 foreach (var entry in hints)
                     reader.Options.Hints.Add(entry.Key, entry.Value);
                 Result[] results = reader.DecodeMultiple(source);
                 if (results != null && results.Length > 0)
                 {
-                        foreach (var result in results)
+                    foreach (var result in results)
+                    {
+                        var points = "";
+                        for (int i = 0; i < result.ResultPoints.Length; i++)
                         {
-                            ParsedResult parsedResult = ResultParser.parseResult(result);
-                            var resultString = originalInput + " (format: " + result.BarcodeFormat + ", type: " + parsedResult.Type + "):" + Environment.NewLine;
-                            for (int i = 0; i < result.ResultPoints.Length; i++)
+                            if (i > 0)
                             {
-                                ResultPoint rp = result.ResultPoints[i];
-                                Console.Out.WriteLine("  Point " + i + ": (" + rp.X + ',' + rp.Y + ')');
+                                points += ",";
                             }
-                            resultString += "Raw result:" + Environment.NewLine + result.Text + Environment.NewLine;
-                            resultString += "Parsed result:" + Environment.NewLine + parsedResult.DisplayResult + Environment.NewLine;
-
-                            Console.Out.WriteLine(resultString);
-                            ResultString = resultString;
+                            ResultPoint rp = result.ResultPoints[i];
+                            points += "{\"x\":" + rp.X + ",\"y\":" + rp.Y + "}";
                         }
+                        var resultString = "{\"type\":\"" + result.BarcodeFormat + "\",\"data\":\"" + result.Text + "\",\"orientation\":" + result.ResultMetadata[ResultMetadataType.ORIENTATION] + ",\"points\":["+points+"]}";
+                        Console.Out.WriteLine(resultString);
+                    }
                     return results;
-                }
-                else
-                {
-                    var resultString = originalInput + ": No barcode found";
-                    Console.Out.WriteLine(resultString);
-                    ResultString = resultString;
                 }
                 return null;
             }
